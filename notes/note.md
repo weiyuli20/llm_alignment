@@ -1,3 +1,5 @@
+# https://apxml.com/zh/courses/rlhf-reinforcement-learning-human-feedback/chapter-3-reward-modeling-human-preferences/learning-from-preferences
+
 ## 大模型解码策略
 大模型解码策略
 
