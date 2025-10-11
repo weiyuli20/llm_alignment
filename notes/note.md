@@ -19,6 +19,7 @@
 
 
 
+
 ## BCELoss
 
 BCELoss 二分类交叉熵损失
@@ -71,3 +72,11 @@ $sigmoid(x) = \frac{1}{1+\exp(-x)}$
 
 
 https://blog.csdn.net/shizheng_Li/article/details/145947974
+
+
+## 交叉熵损失
+交叉熵损失用于计算多分类损失
+
+真实标签为one hot编码：【0，0，1，0】
+
+计算公式为: $L =-\sum_{1}^{n} y_i log(p_i)$
