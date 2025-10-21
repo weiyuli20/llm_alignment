@@ -1,17 +1,21 @@
-# 对文档进行切片构建文档数据集，包含{id，docs,以及片段来源}
-# 构建微调embedding模型所需要的数据集
+## 对文档进行切片构建文档数据集，包含{id，docs,以及片段来源}
+## 构建微调embedding模型所需要的数据集
 - 利用大模型对每个文本片段生成问题和答案，更新数据集为{id,docs,query, answer,以及片段来源}
 - 生成微调embedding model的数据集   
+- 
   1、使用bge基础模型将所有数据向量化（模型选用./BAAI/bge-base-zh-v1.5  ./BAAI/bge-reranker-base）
+
   2、对每个query召回top15
+
   3、过滤出 0.4 < distance <= 0.7 的数据作为负样本（实际操作为对检索到的文档进行rerank,取前3作为正样本，然后从剩下的文档中随机采样5个作为负样本）
 
 更新数据集{id,docs,query, answer,pos, neg以及片段来源}
 
 
-# 评估BAAI/bge-base-zh-v1.5的指标  使用SentenceTransformer的 InformationRetrievalEvaluator
+## 评估BAAI/bge-base-zh-v1.5的指标  使用SentenceTransformer的 InformationRetrievalEvaluator
 - 评估指标 recall, mrr,recall是召回率，计算的是每个问题的相关文档被召回概率的平均。 mrr计算的是第一个相关文档的倒数排名，不关心其他文档（当相关文档有多个的时候）
 - 评估数据集的格式
+  ```
 datasets={
     "corpus":[{uuid1:doc1},{uuid2:doc2},{uuid3:doc3}       #对应的文本id、文本
     ],
@@ -20,7 +24,8 @@ datasets={
     "relevant_docs":[{uuid1:[uuid答案]},{uuid2:[uuid答案]},{uuid3:[uuid答案]}
     ]
 }
-
+```
+```
 {
     "queries": {
         "7813f025-333d-494f-bc14-a51b2d57721b": "日本半导体产业的现状和影响因素是什么？",
@@ -37,6 +42,7 @@ datasets={
         ...
     }
 }
+```
    
 # 微调embedding模型
  - 使用sentence transformer 微调embedding模型
