@@ -15,7 +15,8 @@
 ## 评估BAAI/bge-base-zh-v1.5的指标  使用SentenceTransformer的 InformationRetrievalEvaluator
 - 评估指标 recall, mrr,recall是召回率，计算的是每个问题的相关文档被召回概率的平均。 mrr计算的是第一个相关文档的倒数排名，不关心其他文档（当相关文档有多个的时候）
 - 评估数据集的格式
-  ```
+  
+```
 datasets={
     "corpus":[{uuid1:doc1},{uuid2:doc2},{uuid3:doc3}       #对应的文本id、文本
     ],
@@ -25,6 +26,7 @@ datasets={
     ]
 }
 ```
+
 ```
 {
     "queries": {
@@ -51,3 +53,51 @@ SentenceTransformer 多负样本排序损失函数（MultipleNegativesRankingLos
 
 
 https://blog.csdn.net/qq_44193969/article/details/134042750
+
+
+## 使用ragas进行rag系统的评估
+- 数据集格式
+  
+```
+    eval_dataset = Dataset.from_dict({
+    "question": ["What is the capital of France?"],
+    "contexts": [["Paris is the capital of France."]],
+    "answer": ["The capital of France is Paris."],
+    "ground_truths": [["Paris is the capital of France."]]
+    })
+```
+  
+- 评估指标
+
+
+## 也可以使用llm进行评估,如只在回答准确度指标上进行评估，利用大模型输出分数，然后取平均：（分数-1）/ 4
+
+```
+EVALUATION_PROMPT = """###Task Description:
+An instruction (might include an Input inside it), a response to evaluate, a reference answer that gets a score of 5, and a score rubric representing a evaluation criteria are given.
+1. Write a detailed feedback that assess the quality of the response strictly based on the given score rubric, not evaluating in general.
+2. After writing a feedback, write a score that is an integer between 1 and 5. You should refer to the score rubric.
+3. The output format should look as follows: \"Feedback: {{write a feedback for criteria}} [RESULT] {{an integer number between 1 and 5}}\"
+4. Please do not generate any other opening, closing, and explanations. Be sure to include [RESULT] in your output.
+
+###The instruction to evaluate:
+{instruction}
+
+###Response to evaluate:
+{response}
+
+###Reference Answer (Score 5):
+{reference_answer}
+
+###Score Rubrics:
+[Is the response correct, accurate, and factual based on the reference answer?]
+Score 1: The response is completely incorrect, inaccurate, and/or not factual.
+Score 2: The response is mostly incorrect, inaccurate, and/or not factual.
+Score 3: The response is somewhat correct, accurate, and/or factual.
+Score 4: The response is mostly correct, accurate, and factual.
+Score 5: The response is completely correct, accurate, and factual.
+
+###Feedback:"""
+```
+  
+  
