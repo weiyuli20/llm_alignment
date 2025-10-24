@@ -30,11 +30,14 @@
   - completion_only_loss=True, 仅计算completion部分的损失，数据集格式为 Conversational prompt-completion
   - learning_rate :学习率
   - output_dir:
-  - 
+  - logging_steps: 10 ，多少步记录一次日志
+  - num_train_epoch: 3 ， 训练轮数
+  - gradient_checkpointing:True ，开启梯度检查点
+  - save_steps: 100 
 
 - PEFTConfig 与peft库结合使用进行参数高效微调
   
-  也可以不同PEFTConfig 而直接load一个PeftModel 传给SFTTrainer
+  也可以不用PEFTConfig 而直接load一个PeftModel 传给SFTTrainer
 
 - SFTTrainer，实例化trainer
   
