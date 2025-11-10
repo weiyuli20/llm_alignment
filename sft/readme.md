@@ -100,6 +100,8 @@ ds = ds.map(format_template,num_proc=16,remove_columns=ds.column_names)
 
 - trainer.train()开启训练
 - 可以和 Liger Kernel 、Unsloth结合使用加速训练
+  
+load-8-bit ,bitsandbytesconfig automodel.from_pretrained()
 
 ## 练习使用SFTTrainer 进行微调， 结合Unsloth进行微调
 ## LoRA
@@ -107,6 +109,7 @@ ds = ds.map(format_template,num_proc=16,remove_columns=ds.column_names)
 ## QLoRA
 
 ## 2. 手写sft训练
+sft的完整流程： 加载数据集->将数据集整理成符合chat template的格式->tokenize->dataloader,batch内padding到same length ->构建label, label是由input右移一位得到的->label 处理（将lable中非response部分置为-100，将padding token(第一个除外）对应的位置置为-100)，第一个padding token用于指示大模型response结束，因此需要计算损失。
 
 ## 3.复现sft 灾难遗忘问题
 
@@ -114,3 +117,5 @@ ds = ds.map(format_template,num_proc=16,remove_columns=ds.column_names)
 
 ## evaluate llm
 https://www.philschmid.de/evaluate-llm
+
+## llm 复读机现象
