@@ -21,4 +21,14 @@
   - LiveBench
  
 
-  # 数据集
+  # 数据集（medical-gpt)
+  数据集最终混合配方；在最终送入训练的 train.json 中，你的数据结构应该是：
+  - 55% 垂直领域单轮中文数据  https://huggingface.co/datasets/shibing624/medical/tree/main/finetune。  40k 
+  - 25% 垂直领域多轮中文数据
+  - 10% 通用英文高质量数据（单/多轮均可）
+  - 10% 通用中文对话数据（用于保持通用聊天能力）share-gpt-chinese 共90k, 是中英双语的，从中抽取10k
+    - 中英文7:3
+    - 50%的多轮对话，选择对话轮次大于2的
+    - 过滤低质量样本 （对话回复在30-500）之间
+ 
+
