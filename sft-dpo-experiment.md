@@ -28,6 +28,7 @@
   -  激活值：跟batch_size和序列长度正相关的一个量
 
   batch_size为1，就是一份激活值；为n,就是n份激活值
+  
   序列长素度2 注意力矩阵是2*2， 序列长素是n,注意力矩阵是n *n
  
   14b 全参微调
@@ -47,5 +48,95 @@
     - 中英文7:3
     - 50%的多轮对话，选择对话轮次大于2的
     - 过滤低质量样本 （对话回复在30-500）之间
+   
+
+  # 模型评测
+  MMLU、C-Eval、CMMLU 自动化评估基线
+  BELU、ROUGE、BERTScore、人工评测体系。
+
+  C-Eval 是一个全面的中文评估基准，旨在评估语言模型在中文语境下的知识与推理能力，涵盖了52个学科的13948个多项选择题，分为4个难度级别：https://evalscope.readthedocs.io/zh-cn/latest/benchmarks/ceval.html
+
+  ## evalscope评测：https://evalscope.readthedocs.io/zh-cn/latest/best_practice/qwen3.html
+  ### 1. 安装vllm,部署qwen3-14b
+  ```
+  modelscope download --model Qwen/Qwen3-14B --local_dir
+  #拉起服务
+  vllm serve /root/autodl-tmp/Qwen/Qwen3-14B --gpu-memory-utilization 0.95 --served-model-name Qwen3-14B --port 6606 --max-model-len 4096
+  --max-model-len = 模型最大上下文长度
+  代表 vLLM 推理时，单条请求最多能容纳的输入 + 输出总 token 数量。
+  vLLM 启动时，会根据 max-model-len 预分配整块 KV Cache 缓存
+  #测试服务
+  curl http://127.0.0.1:6606/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+  "model": "Qwen3-14B",
+  "messages": [{"role": "user", "content": "1+1=?"}],
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "max_tokens": 200,
+  "stream": true
+}'
+  ```
+  ### 2. 安装evalscope
+  ```
+  pip install 'evalscope[app,perf]' -U
+  ```
+  ### 3. 评测脚本
+
+```
+from evalscope import TaskConfig, run_task
+
+task_cfg = TaskConfig(
+    model='Qwen3-14B',
+    api_url='http://127.0.0.1:6606/v1/chat/completions',
+    eval_type='openai_api',
+    datasets=['ceval',],
+    eval_batch_size=1,
+    generation_config={
+        'max_tokens': 200,  # 最大生成token数，建议设置为较大值避免输出截断
+        'temperature': 0.7,  # 采样温度 (qwen 报告推荐值)
+        'top_p': 0.8,  # top-p采样 (qwen 报告推荐值)
+        'top_k': 20,  # top-k采样 (qwen 报告推荐值)
+        'n': 1,  # 每个请求产生的回复数量
+        'extra_body':{'chat_template_kwargs': {'enable_thinking': False}}  # 关闭思考模式
+    },
+    timeout=60000,  # 超时时间
+    stream=True,  # 是否使用流式输出
+    limit=10,  # 设置为1000条数据进行测试，但是好像不管用
+)
+
+run_task(task_cfg=task_cfg)
+```
+```
+#取子集的方式
+from evalscope import TaskConfig, run_task
+
+task_cfg = TaskConfig(
+    model='Qwen3-14B',
+    api_url='http://127.0.0.1:6606/v1/chat/completions',
+    eval_type='openai_api',
+    datasets=['ceval'],
+    dataset_args={
+        "ceval": {
+            "subset_list": ["business_administration", "marxism"]  # 只加载2门学科
+        }
+    },
+    eval_batch_size=1,
+    generation_config={
+        'max_tokens': 1024,
+        'temperature': 0.7,
+        'top_p': 0.8,
+        'top_k': 20,
+        'n': 1,
+        'extra_body':{'chat_template_kwargs': {'enable_thinking': False}}
+    },
+    timeout=60000,
+    stream=True,
+)
+
+run_task(task_cfg=task_cfg)
+```
+
+  
  
 
