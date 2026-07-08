@@ -75,7 +75,7 @@
   "top_p": 0.95,
   "max_tokens": 200,
   "stream": true
-}'
+  }'
   ```
   ### 2. 安装evalscope
   ```
