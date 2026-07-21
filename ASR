@@ -1,0 +1,18 @@
+QWEN3-ASR:QWEN3-ASR-0.6B QWEN3-ASR-1.7B
+
+# 1.部署
+```
+python 3.12
+pip install modelscope
+modelscope download --model Qwen/Qwen3-ASR-1.7B  --local_dir ./Qwen3-ASR-1.7B
+apt-get install -y -qq ffmpeg
+```
+
+VLLM推理
+```
+pip install -U qwen-asr[vllm]
+```
+
+qwensar 流式推理必须使用vllm backbend ,但是流式推理不能输出时间戳，如果需要时间戳，需要需要时间
+qwen-asr-serve Qwen/Qwen3-ASR-1.7B --gpu-memory-utilization 0.8 --host 0.0.0.0 --port 8000
+
