@@ -1,0 +1,199 @@
+# Python 工程化代码生成规则
+
+## 核心原则
+
+生成 Python 代码时必须遵循面向对象设计、最小冗余、类型安全的原则。禁止生成过程化堆砌的脚本式代码。
+
+## 强制规则
+
+### 1. 面向对象设计
+
+- 优先使用类封装"数据 + 操作"，不要写一堆平铺函数
+- 使用 `@dataclass` 或 `Pydantic BaseModel` 封装数据结构
+- 同一类操作归到同一个类中，按职责分离原则拆分
+- 函数参数超过 4 个时，必须封装为 dataclass 传参
+
+### 2. 消除冗余
+
+- 禁止复制粘贴代码块，重复逻辑必须提取为公共方法
+- 相似函数必须合并，通过参数差异处理不同情况
+- 使用配置表（字典/枚举）驱动分支逻辑，而非复制函数
+- 错误处理逻辑提取为装饰器或公共方法，不要每个函数重复 try-except
+
+### 3. 正则使用限制
+
+- 正则仅用于文本解析（提取 URL、解析日志格式等）
+- 禁止用正则做意图分类或语义匹配，改用关键词字典或配置表
+- 正则模式必须编译后复用（`re.compile`），不要每次调用重新编译
+- 同一正则在多处使用时，提取为模块级常量
+
+### 4. 分支控制
+
+- 超过 3 个 if-elif 分支时，必须重构为字典分派或策略模式
+- 禁止超过 3 层 if-else 嵌套，用提前返回（guard clause）或提取子函数
+- 硬编码的魔法值必须提取为常量或枚举
+- 分支条件可配置化时，提取为配置表
+
+### 5. 类型注解
+
+- 所有函数必须添加参数和返回值类型注解
+- 使用 Python 3.9+ 语法：`list[str]` 而非 `List[str]`
+- 可选类型用 `X | None`，不旧用 `Optional[X]`
+- 复杂类型用 `TypedDict` 或 dataclass 描述结构
+
+### 6. 命名规范
+
+- 函数名用动词开头：`parse_log`、`validate_email`、`extract_entities`
+- 类名用名词：`LogParser`、`EmailValidator`、`EntityExtractor`
+- 变量名表意明确，禁止 `data`、`result`、`temp` 等无意义命名
+- 布尔变量用 `is_`/`has_`/`should_` 前缀
+
+## 代码结构模板
+
+生成代码时按以下结构组织：
+
+```python
+from __future__ import annotations
+import re
+import json
+from dataclasses import dataclass, field
+from enum import Enum
+from pathlib import Path
+
+# === 常量/配置 ===
+CONFIGS: dict[str, str] = {...}
+
+# === 数据模型 ===
+@dataclass
+class XxxData:
+    field1: str
+    field2: int
+
+# === 核心类 ===
+class XxxProcessor:
+    def __init__(self, ...):
+        ...
+
+    def method1(self, ...) -> ReturnType:
+        ...
+
+# === 入口函数 ===
+def main():
+    processor = XxxProcessor(...)
+    result = processor.method1(...)
+```
+
+## 禁止模式
+
+### 禁止：平铺函数堆砌
+```python
+# ❌ 不要这样写
+def load_data(): ...
+def clean_data(data): ...
+def process_data(data): ...
+def save_data(data): ...
+def send_notification(data): ...
+```
+
+### 应该：类封装
+```python
+# ✅ 应该这样写
+class DataPipeline:
+    def load(self) -> None: ...
+    def clean(self) -> None: ...
+    def process(self) -> None: ...
+    def save(self) -> None: ...
+```
+
+### 禁止：正则做意图分类
+```python
+# ❌ 不要这样写
+def classify(text):
+    if re.search(r'查询|查看', text):
+        return 'query'
+    elif re.search(r'退款|退货', text):
+        return 'refund'
+```
+
+### 应该：配置表驱动
+```python
+# ✅ 应该这样写
+INTENT_KEYWORDS: dict[str, list[str]] = {
+    'query': ['查询', '查看'],
+    'refund': ['退款', '退货'],
+}
+
+def classify(text: str) -> str:
+    for intent, keywords in INTENT_KEYWORDS.items():
+        if any(kw in text for kw in keywords):
+            return intent
+    return 'unknown'
+```
+
+### 禁止：if-else 链
+```python
+# ❌ 不要这样写
+def process(type, data):
+    if type == 'a':
+        return process_a(data)
+    elif type == 'b':
+        return process_b(data)
+    elif type == 'c':
+        return process_c(data)
+```
+
+### 应该：字典分派
+```python
+# ✅ 应该这样写
+PROCESSORS: dict[str, Callable] = {
+    'a': process_a,
+    'b': process_b,
+    'c': process_c,
+}
+
+def process(type: str, data: dict) -> Any:
+    processor = PROCESSORS.get(type)
+    if not processor:
+        raise ValueError(f"未知类型: {type}")
+    return processor(data)
+```
+
+### 禁止：重复代码
+```python
+# ❌ 不要这样写
+def parse_json(filepath):
+    with open(filepath) as f:
+        content = f.read()
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return None
+
+def parse_yaml(filepath):
+    with open(filepath) as f:
+        content = f.read()
+    try:
+        return yaml.safe_load(content)
+    except yaml.YAMLError:
+        return None
+```
+
+### 应该：提取公共逻辑
+```python
+# ✅ 应该这样写
+PARSERS: dict[str, Callable[[str], Any]] = {
+    '.json': json.loads,
+    '.yaml': yaml.safe_load,
+}
+
+def parse_file(filepath: str | Path) -> Any:
+    text = Path(filepath).read_text()
+    parser = PARSERS.get(Path(filepath).suffix)
+    if not parser:
+        raise ValueError(f"不支持的格式: {Path(filepath).suffix}")
+    try:
+        return parser(text)
+    except Exception as e:
+        print(f"解析失败 [{filepath}]: {e}")
+        return None
+```
