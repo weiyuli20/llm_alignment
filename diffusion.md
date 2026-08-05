@@ -11,7 +11,7 @@
 
 
 
- 关于sft训练时学习率和batch_size的关系
+**关于sft训练时学习率和batch_size的关系**
 batch_size增大，梯度的噪声变小，梯度更稳定，可以使用更大学习率
 
 当使用 梯度累计时： lr_new ≈ lr_old * gradient_accumulation_step
